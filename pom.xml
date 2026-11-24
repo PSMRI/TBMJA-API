@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.iemr.tbmja</groupId>
+	<artifactId>tbmja-api</artifactId>
+	<version>1.0.0</version>
+	<packaging>war</packaging>
+
+	<name>TBMJA-API</name>
+	<description>AMRIT TBMJA Service - Clinical Specialist web module</description>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.2.2</version>
+		<relativePath />
+	</parent>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
+		<java.version>17</java.version>
+		<!-- Build with -DENV_VAR=<env>; src/main/environment/common_<env>.properties is appended to application.properties -->
+		<ENV_VAR>example</ENV_VAR>
+		<environment>${ENV_VAR}</environment>
+		<target-properties>target/classes/application.properties</target-properties>
+		<source-properties>target/classes/common_${environment}.properties</source-properties>
+		<jjwt.version>0.12.6</jjwt.version>
+		<sonar.java.binaries>target</sonar.java.binaries>
+	</properties>
+
+	<dependencies>
+		<!-- Web, JPA -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-tomcat</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- Database: MySQL (db_iemr), pooled by Spring Boot's HikariCP -->
+		<dependency>
+			<groupId>com.mysql</groupId>
+			<artifactId>mysql-connector-j</artifactId>
+			<version>8.2.0</version>
+		</dependency>
+
+		<!-- Redis: JWT user cache and token denylist shared with the other AMRIT APIs -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+
+		<!-- JWT -->
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>${jjwt.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>${jjwt.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>${jjwt.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- API docs: Swagger UI at /swagger-ui.html -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.3.0</version>
+		</dependency>
+
+		<!-- Logging: ECS JSON log file for ELK -->
+		<dependency>
+			<groupId>co.elastic.logging</groupId>
+			<artifactId>logback-ecs-encoder</artifactId>
+			<version>1.3.2</version>
+		</dependency>
+
+		<!-- Lombok -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>provided</scope>
+			<optional>true</optional>
+		</dependency>
+
+		<!-- H2 is used only by the swagger profile (Swagger JSON generation in CI, no MySQL there) -->
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- Tests -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<finalName>${project.artifactId}-${project.version}</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
+			</plugin>
+			<!-- Copies src/main/environment/common_<env>.properties into target/classes -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>filter-resources</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>resources</goal>
+						</goals>
+						<configuration>
+							<delimiters>@</delimiters>
+							<useDefaultDelimiters>false</useDefaultDelimiters>
+							<resources>
+								<resource>
+									<directory>src/main/environment</directory>
+									<filtering>true</filtering>
+									<includes>
+										<include>common_${environment}.properties</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Appends that file to application.properties, then deletes the copy -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>properties-updated</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<echo>concatenating ${source-properties} onto ${target-properties}</echo>
+								<concat destfile="${target-properties}" append="yes" force="yes">
+									<fileset file="${source-properties}" />
+								</concat>
+								<delete file="${source-properties}" />
+							</target>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Writes git.properties for the /version endpoint -->
+			<plugin>
+				<groupId>io.github.git-commit-id</groupId>
+				<artifactId>git-commit-id-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>get-the-git-infos</id>
+						<goals>
+							<goal>revision</goal>
+						</goals>
+						<phase>initialize</phase>
+					</execution>
+				</executions>
+				<configuration>
+					<generateGitPropertiesFile>true</generateGitPropertiesFile>
+					<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+					<includeOnlyProperties>
+						<property>^git.branch$</property>
+						<property>^git.commit.id.abbrev$</property>
+						<property>^git.build.version$</property>
+						<property>^git.build.time$</property>
+					</includeOnlyProperties>
+					<failOnNoGitDirectory>false</failOnNoGitDirectory>
+					<failOnUnableToExtractRepoInfo>false</failOnUnableToExtractRepoInfo>
+				</configuration>
+			</plugin>
+			<!-- Test coverage report (target/site/jacoco) -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.11</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

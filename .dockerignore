@@ -1,0 +1,6 @@
+target/
+logs/
+node_modules/
+.git/
+.idea/
+src/main/environment/common_local.properties
