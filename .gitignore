@@ -1,0 +1,36 @@
+#Ignore target and logs
+target\*
+logs\*
+command_output.log
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+target/*
+### Other Entries ###
+mvnw
+mvnw.cmd
+.mvn
+/logs/
+src/main/environment/common_local.properties
+node_modules/
+.claude/
